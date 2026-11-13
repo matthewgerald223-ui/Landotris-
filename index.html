@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -778,4 +779,300 @@
 
         <div class="form-group">
           <label>Your Email Address *</label>
-          <input ty
+          <input type="email" id="cust-email" placeholder="you@email.com" required />
+        </div>
+
+        <div class="form-group">
+          <label>Your Phone Number *</label>
+          <input type="tel" id="cust-phone" placeholder="020 7946 0123" required />
+        </div>
+
+        <div class="form-group">
+          <label>Delivery Method *</label>
+          <select id="delivery-option" onchange="renderCart()">
+            <option value="0">New York Store Pickup — Free ($0.00)</option>
+            <option value="0">Standard US Ground Shipping — Free ($0.00)</option>
+            <option value="50">Express Air Delivery — $50.00</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Street Address *</label>
+          <input type="text" id="cust-address" placeholder="350 Fifth Avenue" required />
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+          <div class="form-group" style="flex: 2;">
+            <label>City *</label>
+            <input type="text" id="cust-city" value="New York" required />
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label>State *</label>
+            <input type="text" id="cust-state" value="NY" maxlength="2" required />
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label>Zip Code *</label>
+            <input type="text" id="cust-zip" placeholder="10001" required />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="drawer-footer">
+      <div class="total-row">
+        <span>Total Payable:</span>
+        <span id="cart-total">$0.00</span>
+      </div>
+      <button class="pay-btn" id="pay-btn" onclick="processCheckout()" disabled>
+        Place Order &amp; Pay Now
+      </button>
+    </div>
+  </aside>
+
+  <footer>
+    <p><strong>Landrtons Music Co.</strong> — New York, NY</p>
+    <p>Phone: <a href="tel:02079460123">020 7946 0123</a> | Orders &amp; Support: <a href="mailto:andertons.orders@gmail.com">andertons.orders@gmail.com</a></p>
+    <p style="margin-top:6px; color:#666;">&copy; 2026 Landrtons Music Co. All Rights Reserved.</p>
+  </footer>
+
+  <script>
+    const STORE_EMAIL = "andertons.orders@gmail.com";
+    const STORE_PHONE = "020 7946 0123";
+    const STORE_LOCATION = "New York";
+
+    // PRODUCT CATALOG WITH WORKING DIRECT IMAGE LINKS (No local folder wahala)
+    const products = [
+      {
+        id: 1,
+        name: "Fender Player Fusion Series Stratocaster (White)",
+        category: "White Series",
+        price: 3000,
+        image: "https://images.unsplash.com/photo-1564186763535-ebb21ef5277f?auto=format&fit=crop&w=500&q=80"
+      },
+      {
+        id: 2,
+        name: "Fender Custom Shop Vintage White Stratocaster",
+        category: "White Series",
+        price: 3000,
+        image: "https://images.unsplash.com/photo-1550291652-6ea9114a47b1?auto=format&fit=crop&w=500&q=80"
+      },
+      {
+        id: 3,
+        name: "Fender Custom Blue Stratocaster with P90 Pickups",
+        category: "Pro Series",
+        price: 2000,
+        image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=500&q=80"
+      },
+      {
+        id: 4,
+        name: "Gibson / Epiphone Les Paul Standard Sunburst",
+        category: "Pro Series",
+        price: 2000,
+        image: "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=500&q=80"
+      },
+      {
+        id: 5,
+        name: "Fender Player Sunburst Stratocaster (HSS)",
+        category: "Pro Series",
+        price: 2000,
+        image: "https://images.unsplash.com/photo-1467139701976-18c22a96fa6a?auto=format&fit=crop&w=500&q=80"
+      }
+    ];
+
+    // PROMO SLIDER LOGIC
+    const promos = [
+      { title: "WHITE SERIES GUITARS", desc: "Special edition models priced at $3,000" },
+      { title: "PRO SERIES COLLECTION", desc: "Professional electric guitars at $2,000 each" },
+      { title: "CALL US: 020 7946 0123", desc: "New York flagship store & support" }
+    ];
+    let promoIndex = 0;
+
+    function cyclePromo(dir) {
+      promoIndex = (promoIndex + dir + promos.length) % promos.length;
+      document.getElementById("promo-title").textContent = promos[promoIndex].title;
+      document.getElementById("promo-desc").textContent = promos[promoIndex].desc;
+    }
+
+    // FILTER & RENDER STOREFRONT
+    let currentCategory = "All";
+
+    function setCategory(cat, btnElement) {
+      currentCategory = cat;
+      document.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("active"));
+      if (btnElement) btnElement.classList.add("active");
+      document.getElementById("catalog-heading").textContent = cat === "All" ? "Featured Guitars" : cat;
+      filterProducts();
+    }
+
+    function menuSelect(cat) {
+      toggleNav(false);
+      setCategory(cat, null);
+      document.getElementById("catalog").scrollIntoView({ behavior: "smooth" });
+    }
+
+    function filterProducts() {
+      const query = document.getElementById("search-input").value.toLowerCase();
+      const grid = document.getElementById("product-grid");
+
+      const filtered = products.filter(p => {
+        const matchCat = currentCategory === "All" || p.category === currentCategory;
+        const matchSearch = p.name.toLowerCase().includes(query) || p.category.toLowerCase().includes(query);
+        return matchCat && matchSearch;
+      });
+
+      document.getElementById("item-total-label").textContent = `${filtered.length} item${filtered.length === 1 ? "" : "s"}`;
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `<p style="grid-column:1/-1; text-align:center; color:#aaa; padding:30px;">No guitars found matching "${query}".</p>`;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(item => `
+        <div class="product-card">
+          <div class="product-img-box">
+            <span class="stock-badge">In Stock</span>
+            <img src="${item.image}" alt="${item.name}" loading="lazy" />
+          </div>
+          <div class="product-info">
+            <div class="product-cat">${item.category}</div>
+            <div class="product-title">${item.name}</div>
+            <div class="product-price">$${item.price.toLocaleString()}</div>
+            <button class="add-cart-btn" onclick="addToCart(${item.id})">Add to Cart</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    // SHOPPING CART STATE
+    let cart = JSON.parse(localStorage.getItem("landrtons_ny_cart")) || [];
+
+    function saveCart() {
+      localStorage.setItem("landrtons_ny_cart", JSON.stringify(cart));
+      renderCart();
+    }
+
+    function addToCart(productId) {
+      const product = products.find(p => p.id === productId);
+      const existing = cart.find(item => item.id === productId);
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        cart.push({ ...product, qty: 1 });
+      }
+      saveCart();
+      toggleCart(true);
+    }
+
+    function changeQty(productId, delta) {
+      const item = cart.find(i => i.id === productId);
+      if (!item) return;
+      item.qty += delta;
+      if (item.qty <= 0) {
+        cart = cart.filter(i => i.id !== productId);
+      }
+      saveCart();
+    }
+
+    function renderCart() {
+      const container = document.getElementById("cart-items-container");
+      const checkoutSection = document.getElementById("checkout-section");
+      const payBtn = document.getElementById("pay-btn");
+
+      const totalItems = cart.reduce((sum, i) => sum + i.qty, 0);
+      document.getElementById("cart-count").textContent = totalItems;
+      document.getElementById("drawer-cart-count").textContent = totalItems;
+
+      if (cart.length === 0) {
+        container.innerHTML = `<p style="text-align:center; color:#888; padding:30px 0;">Your Landrtons cart is empty.</p>`;
+        checkoutSection.style.display = "none";
+        document.getElementById("cart-total").textContent = "$0.00";
+        payBtn.disabled = true;
+        return;
+      }
+
+      checkoutSection.style.display = "block";
+      payBtn.disabled = false;
+
+      container.innerHTML = cart.map(item => `
+        <div class="cart-item">
+          <img src="${item.image}" alt="${item.name}" />
+          <div class="cart-item-details">
+            <div class="cart-item-title">${item.name}</div>
+            <div class="cart-item-price">$${(item.price * item.qty).toLocaleString()}</div>
+            <div class="qty-controls">
+              <button class="qty-btn" onclick="changeQty(${item.id}, -1)">-</button>
+              <span>${item.qty}</span>
+              <button class="qty-btn" onclick="changeQty(${item.id}, 1)">+</button>
+            </div>
+          </div>
+        </div>
+      `).join("");
+
+      const subtotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+      const shippingFee = parseInt(document.getElementById("delivery-option").value || "0", 10);
+      const grandTotal = subtotal + shippingFee;
+
+      document.getElementById("cart-total").textContent = `$${grandTotal.toLocaleString()}`;
+    }
+
+    // CHECKOUT HANDLER
+    function processCheckout() {
+      const name = document.getElementById("cust-name").value.trim();
+      const email = document.getElementById("cust-email").value.trim();
+      const phone = document.getElementById("cust-phone").value.trim();
+      const address = document.getElementById("cust-address").value.trim();
+      const city = document.getElementById("cust-city").value.trim();
+      const state = document.getElementById("cust-state").value.trim();
+      const zip = document.getElementById("cust-zip").value.trim();
+
+      if (!name || !email || !phone || !address || !city || !state || !zip) {
+        alert("Please fill out all required shipping and contact fields.");
+        return;
+      }
+
+      const subtotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+      const shippingFee = parseInt(document.getElementById("delivery-option").value || "0", 10);
+      const grandTotal = subtotal + shippingFee;
+      const itemsList = cart.map(i => `- ${i.name} (x${i.qty}): $${(i.price * i.qty).toLocaleString()}`).join("\n");
+
+      const subject = encodeURIComponent(`New Guitar Order from ${name} - Landrtons Music Co.`);
+      const body = encodeURIComponent(
+        `NEW ORDER DETAILS (${STORE_LOCATION})\n\n` +
+        `Customer: ${name}\n` +
+        `Email: ${email}\n` +
+        `Phone: ${phone}\n` +
+        `Shipping Address: ${address}, ${city}, ${state} ${zip}\n\n` +
+        `Guitars Ordered:\n${itemsList}\n\n` +
+        `Total Payable: $${grandTotal.toLocaleString()}`
+      );
+
+      alert(`Order confirmed for ${name}!\nSending order summary to ${STORE_EMAIL} (${STORE_LOCATION}).`);
+      window.location.href = `mailto:${STORE_EMAIL}?subject=${subject}&body=${body}`;
+      
+      cart = [];
+      saveCart();
+      toggleCart(false);
+    }
+
+    // DRAWER CONTROLS
+    function toggleCart(open) {
+      document.getElementById("cart-drawer").classList.toggle("open", open);
+      document.getElementById("overlay").classList.toggle("open", open);
+    }
+
+    function toggleNav(open) {
+      document.getElementById("nav-drawer").classList.toggle("open", open);
+      document.getElementById("overlay").classList.toggle("open", open);
+    }
+
+    function closeAllDrawers() {
+      toggleCart(false);
+      toggleNav(false);
+    }
+
+    // Initialize
+    filterProducts();
+    renderCart();
+  </script>
+</body>
+</html>
